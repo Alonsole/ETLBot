@@ -201,6 +201,12 @@ class Experience(Base):
     user_exp = sq.Column(sq.Integer, sq.ForeignKey("users.id"))
     users = relationship("Users", backref="experience")
 
+class Victory(Base):
+    __tablename__ = "victory"
+    id = sq.Column(sq.String(length=250), primary_key=True)
+    eng_word = sq.Column(sq.String(length=250), unique=False)
+    rus_word = sq.Column(sq.String(length=250), unique=False)
+
 
 """подключается к БД любого типа на ваш выбор"""
 name = "postgres"
@@ -248,7 +254,6 @@ def get_random_word(user_id):
 
 def add_word_db(id_user_word, new_rus_word, new_eng_word):
     """Добавить слово"""
-    print(new_rus_word)
     result = Connectbase(name, passw, server, port, name_db, sqlm, None,
                          str(id_user_word), new_rus_word, new_eng_word).add_word()
     return result
@@ -256,7 +261,6 @@ def add_word_db(id_user_word, new_rus_word, new_eng_word):
 
 def del_word_db(user_id, new_rus_word):
     """Удаление слова"""
-    print(new_rus_word)
     result = Connectbase(name, passw, server, port, name_db, sqlm, None,
                          str(user_id), new_rus_word).del_word()
     return result
@@ -287,3 +291,18 @@ def get_check_word(id_user_word, new_rus_word):
     result = Connectbase(name, passw, server, port, name_db, sqlm, None,
                          str(id_user_word), new_rus_word, None).check_word()
     return result
+
+
+def add_victory(id_user, rus_word, eng_word):
+    """Запись связки перевода для юзера"""
+    Connectbase(name, passw, server, port, name_db, sqlm, None,
+                         str(id_user), rus_word, eng_word).victory_word()
+
+
+def check_victory(id_user_word):
+    """проверка связки перевода для юзера"""
+    result = Connectbase(name, passw, server, port, name_db, sqlm, None,
+                         str(id_user_word), None, None).check_victory_word()
+    return result
+
+
