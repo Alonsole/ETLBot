@@ -177,17 +177,14 @@ class Connectbase:
         engine = sqlalchemy.create_engine(self.DSN)
         Session = sessionmaker(bind=engine)
         session = Session()
-        count = session.query(Victory.id).count()
         query = session.query(Victory).filter(Victory.id == self.user_id).first()
         if query is not None:
             session.delete(query)
             session.commit()
-
         victory_word = Victory(
             id=self.user_id,
             eng_word=self.new_eng_word,
             rus_word=self.new_rus_word)
-            # user_id=self.user_id)
         session.add(victory_word)
         session.commit()
         session.close()
