@@ -27,12 +27,6 @@ class Command:
     my_experience = types.KeyboardButton("Статистика обучения 🏆")
 
 
-class MyStates(StatesGroup):
-    target_word = State()
-    translate_word = State()
-    another_words = State()
-
-
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     global user_info
@@ -113,12 +107,7 @@ def start_of_studies(message):
                         "Угадаете перевод с первой попытки?"]
     random.shuffle(message_question)
     bot.send_message(message.chat.id, f"{message_question[0]} \n ⭐ {rus_word} ⭐:", reply_markup=markup)
-    bot.set_state(message.from_user.id, MyStates.target_word, message.chat.id)
-    global data
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data['rus_word'] = rus_word
-        data['eng_word'] = eng_word
-        data['other_words'] = [wrong_word_one, wrong_word_two, wrong_word_three]
+    BaseETLBot.add_victory(message.from_user.id, rus_word, eng_word)
 
 
 @bot.message_handler(func=lambda message: message.text == Command.add_word.text)
@@ -182,8 +171,6 @@ def my_word_list(message):
 
 @bot.message_handler(func=lambda message: message.text == Command.my_experience.text)
 def my_experience(message):
-    """Очищаю data"""
-    del data['eng_word']
 
     """Отображение статистики изучения слов"""
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -213,8 +200,9 @@ def next_word(message):
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def message_reply(message):
     """Проверка решения"""
+    result = BaseETLBot.check_victory(message.from_user.id)
     Addword.id_user_word = message.from_user.id
-    Addword.new_eng_word = message.text
+    Addword.new_eng_word = message.text    
     message_win = ["А Вы молодец 🧡. Верно ✅",
                    "У Вас отлично выходит 🧡. Правильно ✅",
                    "Вы великолепны 🧡. Так точно ✅",
@@ -229,7 +217,7 @@ def message_reply(message):
                     "Ой Ой, чуть чуть не так. Ещё раз? ✅"]
     random.shuffle(message_lose)
     try:
-        if message.text == data['eng_word']:
+        if message.text == result[0]:
             bot.send_message(message.chat.id, f"{message_win[0]}")
             bot.send_message(message.chat.id, f"Продолжаем ⏩⏩⏩")
             BaseETLBot.add_experience(Addword.id_user_word, Addword.new_eng_word)
@@ -242,8 +230,8 @@ def message_reply(message):
 
 if __name__ == '__main__':
     """Создание базы, заливка базы и запуск бота"""
-    # 1. BaseETLBot.createdatabase()
-    # 2. BaseETLBot.loadworddatabase()
+    # BaseETLBot.createdatabase() # 1
+    # BaseETLBot.loadworddatabase() # 2
 
     # print('Бот запущен...')
-    # 3. bot.polling()
+    # bot.polling() # 3
