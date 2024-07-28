@@ -72,11 +72,11 @@ class Connectbase:
         engine = sqlalchemy.create_engine(self.DSN)
         Session = sessionmaker(bind=engine)
         session = Session()
-        subq = session.query(Users.id).filter(Users.user_id == self.user_id)
-        query1 = session.query(Words.rus_word, Words.eng_word).filter(Words.word_user == subq[0][0]).all()
-        query2 = session.query(Words.rus_word, Words.eng_word).filter(Words.word_user == None).all()
-        all_words = query1 + query2
-        random_words = random.sample(all_words, 4)
+        subq = session.query(Users.id).filter(Users.user_id == self.user_id).scalar_subquery()
+        query = session.query(Words.rus_word, Words.eng_word).filter(
+            (Words.word_user == subq) | (Words.word_user == None)
+        ).all()
+        random_words = random.sample(query, min(4, len(query)))
         session.close()
         return random_words
 
@@ -147,22 +147,25 @@ class Connectbase:
             return result
 
     def experience_user(self):
-        try:
-            engine = sqlalchemy.create_engine(self.DSN)
-            Session = sessionmaker(bind=engine)
-            session = Session()
-            query = session.query(Users.id)
-            result = query.filter(Users.user_id == self.user_id).all()[0][0]
-            word_count = session.query(Experience.id).count()
+        engine = sqlalchemy.create_engine(self.DSN)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        query = session.query(Users.id)
+        result = query.filter(Users.user_id == self.user_id).all()[0][0]
+        # Проверяем, существует ли уже слово для данного пользователя
+        existing_word = session.query(Experience).filter_by(user_exp=result, eng_word_exp=self.new_eng_word).first()
+        if existing_word is None:
+            # Если слово не существует, добавляем его в базу данных
             word_exp = Experience(
-                id=word_count + 1,
                 eng_word_exp=self.new_eng_word,
-                user_exp=result)
+                user_exp=result
+            )
             session.add(word_exp)
             session.commit()
-            session.close()
-        except:
+        else:
             pass
+
+        session.close()
 
     def get_experience_user(self):
         engine = sqlalchemy.create_engine(self.DSN)
@@ -210,7 +213,7 @@ class Users(Base):
 
 class Words(Base):
     __tablename__ = "words"
-    id = sq.Column(sq.Integer, primary_key=True)
+    id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
     eng_word = sq.Column(sq.String(length=250), unique=False)
     rus_word = sq.Column(sq.String(length=250), unique=False)
     word_user = sq.Column(sq.Integer, sq.ForeignKey("users.id"))
@@ -219,7 +222,7 @@ class Words(Base):
 
 class Experience(Base):
     __tablename__ = "experience"
-    id = sq.Column(sq.Integer, primary_key=True)
+    id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
     eng_word_exp = sq.Column(sq.String(length=250), unique=False)
     user_exp = sq.Column(sq.Integer, sq.ForeignKey("users.id"))
     users = relationship("Users", backref="experience")
