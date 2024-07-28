@@ -86,10 +86,8 @@ class Connectbase:
             Session = sessionmaker(bind=engine)
             session = Session()
             query = session.query(Users.id)
-            result = query.filter(Users.user_id == self.user_id).all()[0][0]
-            word_count = session.query(func.max(Words.id)).scalar()
+            result = query.filter(Users.user_id == self.user_id).all()[0][0]   
             new_word = Words(
-                id=word_count + 1,
                 eng_word=self.new_eng_word,
                 rus_word=self.new_rus_word,
                 word_user=result)
