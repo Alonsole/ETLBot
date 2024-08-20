@@ -4,7 +4,7 @@ import json
 import random
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import func
+
 
 Base = declarative_base()
 
@@ -166,11 +166,16 @@ class Connectbase:
         session.close()
 
     def get_experience_user(self):
+        """Получение информации об успешных сопоставлениях"""
         engine = sqlalchemy.create_engine(self.DSN)
         Session = sessionmaker(bind=engine)
         session = Session()
-        subq = session.query(Users.id).filter(Users.user_id == self.user_id)
-        query = session.query(Experience).filter(Experience.user_exp == subq[0][0]).count()
+        query = (
+            session.query(Experience)
+            .join(Users, Users.id == Experience.user_exp)
+            .filter(Users.user_id == self.user_id)
+            .count()
+        )
         session.close()
         return query
 
