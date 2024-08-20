@@ -205,7 +205,7 @@ with open('dataword.json', 'r') as f:
 class Users(Base):
     __tablename__ = "users"
     id = sq.Column(sq.Integer, primary_key=True)
-    user_name = sq.Column(sq.String(length=250), unique=True)
+    user_name = sq.Column(sq.String(length=250), unique=False)
     user_id = sq.Column(sq.String(length=20), unique=True)
 
 
