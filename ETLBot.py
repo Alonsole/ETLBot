@@ -1,11 +1,7 @@
 import random
-import telebot
+from settings import bot
 from telebot import types
-from telebot.handler_backends import StatesGroup, State
 import BaseETLBot
-
-TOKEN = 'TOKEN'
-bot = telebot.TeleBot(TOKEN)
 
 
 class Addword:
@@ -229,9 +225,5 @@ def message_reply(message):
 
 
 if __name__ == '__main__':
-    """Создание базы, заливка базы и запуск бота"""
-    # BaseETLBot.createdatabase() # 1
-    # BaseETLBot.loadworddatabase() # 2
-
-    # print('Бот запущен...')
-    # bot.polling() # 3
+    print('Бот запущен...')
+    bot.polling()
