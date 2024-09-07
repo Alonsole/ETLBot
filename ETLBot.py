@@ -1,4 +1,5 @@
 import random
+import re
 from settings import bot
 from telebot import types
 import BaseETLBot
@@ -38,6 +39,7 @@ def send_welcome(message):
     markup.add(btn_first, Command.help_b)
     bot.reply_to(message, f"Здравствуйте, уважаемый {user_info} 👋 \n"
                           f"Бот создан с целью практических занятий английскому языку. \n"
+                          "База содержит - 9954 слова🧡"
                           "Тренировки можете проходить в удобном для Вас темпе и в любое удобное вермя ⌚. \n"
                           "У Вас есть возможность добавлять личные слова, которые будут доступны только Вам.\n"
                           "Вы сможете собрать свою собственную базу для обучения 💎.  \n"
@@ -127,24 +129,47 @@ def add_word(message):
 
 def send_add_word(message):
     """Заливка нового слова"""
+    rus_word = set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
+    eng_word = set('abcdefghijklmnopqrstuvwxyz')
+    regex = r'[\W\d]+'
     if message.text == Command.back.text:
         Addword.id_add_word = 0
         start_of_studies(message)
     elif Addword.id_add_word == 0:
-        Addword.new_rus_word = message.text
-        result = BaseETLBot.get_check_word(Addword.id_user_word, Addword.new_rus_word)
-        if result > 0:
-            bot.send_message(message.chat.id, f"Слово 🇷🇺 {Addword.new_rus_word} уже есть в базе знаний ")
-            add_word(message)
+        if (len(message.text) < 2 or message.text[0].islower()
+                                or bool(re.search(regex, message.text))
+                                or not message.text[1::].islower()
+                                or message.text[1] not in rus_word):
+            bot.send_message(message.chat.id, f"Внимательнее к требованиям заполнения! "
+                                              f"Слова начинаются с Заглавной буквы."
+                                              f"Слово должно быть введено на русском языке")
+            Addword.id_add_word = 0
+            start_of_studies(message)
         else:
-            Addword.id_add_word = 1
-            add_word(message)
+            Addword.new_rus_word = message.text
+            result = BaseETLBot.get_check_word(Addword.id_user_word, Addword.new_rus_word)
+            if result > 0:
+                bot.send_message(message.chat.id, f"Слово 🇷🇺 {Addword.new_rus_word} уже есть в базе знаний ")
+                add_word(message)
+            else:
+                Addword.id_add_word = 1
+                add_word(message)
     else:
-        Addword.new_eng_word = message.text
-        Addword.id_add_word = 0
-        BaseETLBot.add_word_db(Addword.id_user_word, Addword.new_rus_word, Addword.new_eng_word)
-        bot.send_message(message.chat.id, f"Успешно добалено слово 🇷🇺 {Addword.new_rus_word} и \n"
-                                          f"перевод 🏴󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥󠁮󠁧󠁿 󠁧󠁢󠁥󠁮󠁧󠁿{Addword.new_eng_word}")
+        if (len(message.text) < 2 or message.text[0].islower()
+                                  or bool(re.search(regex, message.text))
+                                  or not message.text[1::].islower()
+                                  or message.text[1] not in eng_word):
+            bot.send_message(message.chat.id, f"Внимательнее к требованиям заполнения! "
+                                              f"Слова начинаются с Заглавной буквы."
+                                              f"Слово должно быть введено на английском языке")
+            Addword.id_add_word = 0
+            start_of_studies(message)
+        else:
+            Addword.new_eng_word = message.text
+            Addword.id_add_word = 0
+            BaseETLBot.add_word_db(Addword.id_user_word, Addword.new_rus_word, Addword.new_eng_word)
+            bot.send_message(message.chat.id, f"Успешно добалено слово 🇷🇺 {Addword.new_rus_word} и \n"
+                                              f"перевод 🏴󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥󠁮󠁧󠁿 󠁧󠁢󠁥󠁮󠁧󠁿{Addword.new_eng_word}")
 
 
 @bot.message_handler(func=lambda message: message.text == Command.back.text)
@@ -203,14 +228,25 @@ def message_reply(message):
                    "У Вас отлично выходит 🧡. Правильно ✅",
                    "Вы великолепны 🧡. Так точно ✅",
                    "Вы бесспорно правы ✅",
-                   "Безупречно 🧡. Угадали ✅"]
+                   "Безупречно 🧡. Угадали ✅",
+                   "Очередной успех ✅",
+                   "Верно, продолжай ✅",
+                   "Отлично, Вы правы ✅",
+                   "Безупречно ✅",
+                   "Супер. Все правильно ✅"]
     random.shuffle(message_win)
 
     message_lose = ["Увы ошибка 🙁, но не расстраивайтесь и попробуйте ещё раз ✅",
                     "Ошиблись 🙄, повторите попытку ✅ или нажмите далее ⏩",
                     "Вы были очень близки к верному переводу 🙃",
                     "Попытка не пытка 😘. Продолжайте ✅",
-                    "Ой Ой, чуть чуть не так. Ещё раз? ✅"]
+                    "Ой Ой, чуть чуть не так. Ещё раз? ✅",
+                    "Не сдавайтесь, всё получится ✅",
+                    "На ошибках учатся. Ещё разок ✅",
+                    "У Вас точно получится. Попытайтесь ещё ✅",
+                    "Ну ничего сташного .....😀 ✅",
+                    "Каждая ошибка приближает к победе 💪",
+                    "Верный ответ где-то рядом 😜"]
     random.shuffle(message_lose)
     try:
         if message.text == result[0]:
