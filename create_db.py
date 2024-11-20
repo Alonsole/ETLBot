@@ -2,7 +2,7 @@ from sqlalchemy import text
 import sqlalchemy
 
 
-def create_object_db(path: str) -> tuple[int, None] | tuple[int, str]:
+def create_object_db(path):
     """Создание Базы Данных по пути path"""
 
     for_create_path = path[:path.rfind('/')]
